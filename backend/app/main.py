@@ -35,12 +35,13 @@ def configure_db():
             else:
                 new_staff = User(
                     username=s["username"],
-                    password="password",
+                    hashed_password="password", # In production, use hashing
                     role=s["role"],
                     skills=s["skills"],
                     location_lat=s["lat"],
                     location_lng=s["lng"],
-                    is_available=True
+                    is_available=1, # Integer field
+                    location_floor=1
                 )
                 db.add(new_staff)
         

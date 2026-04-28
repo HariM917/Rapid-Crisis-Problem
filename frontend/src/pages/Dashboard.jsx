@@ -107,6 +107,7 @@ const Dashboard = () => {
   const [realGuests, setRealGuests] = useState([]);
   const [iotData, setIotData] = useState({});
   const [mapData, setMapData] = useState({ rooms: [] });
+  const [activeFloor, setActiveFloor] = useState(1);
   const [simRunning, setSimRunning] = useState(false);
 
   const lastEvent = useRealtime();
@@ -409,50 +410,68 @@ const Dashboard = () => {
                   <div className="lg:col-span-8 space-y-6">
                     <div className="bg-white p-1 rounded-[2.5rem] border border-slate-100 shadow-2xl h-[600px] overflow-hidden relative group">
                       {/* Tactical View Controls */}
-                      <div className="absolute top-6 left-6 z-10 flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-xl border border-slate-100 shadow-sm">
-                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                           <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Tactical Feed Active</span>
-                        </div>
-                        
-                        <div className="flex p-1 bg-slate-100 rounded-xl border border-slate-200">
-                          {['floor', 'map', '3d'].map(mode => (
-                            <button
-                              key={mode}
-                              onClick={() => setViewMode(mode)}
-                              className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                                viewMode === mode ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'
-                              }`}
-                            >
-                              {mode === 'floor' ? 'Floor' : mode === 'map' ? 'Map' : '3D Twin'}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="absolute top-6 right-6 z-10">
-                         <div className="flex p-1 bg-red-50 rounded-xl border border-red-100">
-                            {['admin', 'staff'].map(role => (
+                      <div className="absolute top-4 left-4 right-4 z-20 flex flex-wrap items-center justify-between gap-4 pointer-events-none">
+                        <div className="flex items-center gap-3 pointer-events-auto">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-100 shadow-xl">
+                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Tactical Feed Active</span>
+                          </div>
+                          
+                          <div className="flex p-1 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl">
+                            {['floor', 'map', '3d'].map(mode => (
                               <button
-                                key={role}
-                                onClick={() => setUserRole(role)}
-                                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                                  userRole === role ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 'text-red-400 hover:text-red-600'
+                                key={mode}
+                                onClick={() => setViewMode(mode)}
+                                className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                                  viewMode === mode ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'
                                 }`}
                               >
-                                {role} View
+                                {mode === 'floor' ? 'Floor' : mode === 'map' ? 'Map' : '3D Twin'}
                               </button>
                             ))}
-                         </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pointer-events-auto">
+                          {/* Floor Selection */}
+                          <div className="flex p-1 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl">
+                            {[1, 2, 3, 4, 5].map(f => (
+                              <button
+                                key={f}
+                                onClick={() => setActiveFloor(f)}
+                                className={`w-8 h-8 rounded-xl text-[10px] font-black transition-all ${
+                                  activeFloor === f ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-200' : 'text-slate-400 hover:bg-slate-50'
+                                }`}
+                              >
+                                F{f}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="flex p-1 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200 shadow-xl">
+                              {['admin', 'staff'].map(role => (
+                                <button
+                                  key={role}
+                                  onClick={() => setUserRole(role)}
+                                  className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                                    userRole === role ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 'text-red-400 hover:text-red-600'
+                                  }`}
+                                >
+                                  {role} View
+                                </button>
+                              ))}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="w-full h-full">
-                        {viewMode === 'floor' && <FloorPlan guests={realGuests} activeIncidents={activeIncidents} staff={staff} />}
+                        {viewMode === 'floor' && <FloorPlan activeFloor={activeFloor} guests={realGuests} activeIncidents={activeIncidents} staff={staff} />}
                         {viewMode === 'map' && <MapView incidents={activeIncidents} staff={staff} />}
                         {viewMode === '3d' && (
                           <div className="w-full h-full">
                             <ThreeMapView 
                               mapData={mapData} 
+                              activeFloor={activeFloor}
                               incidents={activeIncidents} 
                               staff={staff} 
                               iotData={iotData}

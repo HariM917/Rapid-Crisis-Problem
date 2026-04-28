@@ -18,12 +18,11 @@ const rooms = [
   { id: '112', x: 80, y: 55, w: 14, h: 35 },
 ];
 
-const FloorPlan = ({ guests = [], activeIncidents = [], staff = [] }) => {
-  const [selectedFloor, setSelectedFloor] = useState(1);
+const FloorPlan = ({ guests = [], activeIncidents = [], staff = [], activeFloor = 1 }) => {
   const [hoveredRoom, setHoveredRoom] = useState(null);
 
   const getRoomId = (baseId) => {
-    return `${selectedFloor}${baseId}`;
+    return `${activeFloor}${baseId}`;
   };
 
   const getRoomStatus = (roomBaseId) => {
@@ -49,34 +48,9 @@ const FloorPlan = ({ guests = [], activeIncidents = [], staff = [] }) => {
   };
 
   return (
-    <div className="relative w-full h-full bg-slate-50 p-8 flex flex-col gap-6">
-      {/* Floor Selector */}
-      <div className="flex items-center justify-between px-4 z-20">
-        <div className="flex gap-2 p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm">
-          {[5, 4, 3, 2, 1].map(floor => (
-            <button
-              key={floor}
-              onClick={() => setSelectedFloor(floor)}
-              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                selectedFloor === floor 
-                ? 'bg-slate-900 text-white shadow-lg shadow-slate-200' 
-                : 'text-slate-400 hover:bg-slate-50'
-              }`}
-            >
-              Floor {floor}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-200" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tactical Layer Active</span>
-           </div>
-        </div>
-      </div>
-
+    <div className="relative w-full h-full bg-white flex flex-col overflow-hidden">
       {/* Main Floor Container */}
-      <div className="relative flex-1 border-2 border-slate-200 rounded-3xl bg-white shadow-2xl p-4 overflow-hidden">
+      <div className="relative flex-1 bg-white p-4">
         {/* Blueprint Grid Lines */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
              style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }} 
