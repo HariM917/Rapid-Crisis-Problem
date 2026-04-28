@@ -109,6 +109,7 @@ const Dashboard = () => {
   const [mapData, setMapData] = useState({ rooms: [] });
   const [activeFloor, setActiveFloor] = useState(1);
   const [simRunning, setSimRunning] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const lastEvent = useRealtime();
 

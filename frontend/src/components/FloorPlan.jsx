@@ -60,7 +60,7 @@ const FloorPlan = ({ guests = [], activeIncidents = [], staff = [], activeFloor 
         <div className="absolute top-[45%] left-0 w-full h-[10%] bg-slate-50 border-y border-slate-100 flex items-center justify-between px-10">
           <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
             <Shield size={12} />
-            Level {selectedFloor} Tactical Corridor
+            Level {activeFloor} Tactical Corridor
           </div>
         </div>
 
@@ -133,7 +133,7 @@ const FloorPlan = ({ guests = [], activeIncidents = [], staff = [], activeFloor 
                 </text>
 
                 {/* Evacuation Arrows (If Fire is nearby) */}
-                {activeIncidents.some(inc => inc.type === 'fire' && String(inc.room_name).includes(String(selectedFloor))) && status.type !== 'alert' && (
+                {activeIncidents.some(inc => inc.type === 'fire' && String(inc.room_name).includes(String(activeFloor))) && status.type !== 'alert' && (
                   <motion.line
                     x1={room.x + room.w/2} y1={room.y + room.h/2}
                     x2={room.x + room.w/2} y2={50}
