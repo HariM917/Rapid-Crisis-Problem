@@ -11,7 +11,7 @@ from app.services.iot_service import iot_simulator
 import uvicorn
 import random
 
-app = FastAPI(title="AI Crisis Coordination System")
+app = FastAPI(title="AI Crisis Coordination System v0.1.1")
 
 @app.on_event("startup")
 def configure_db():
