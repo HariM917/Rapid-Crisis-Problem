@@ -51,8 +51,22 @@ A real-time emergency coordination platform for hotels, featuring AI classificat
 - **Interactive Map**: Visualize incident locations and staff placement.
 - **AI Engine**: Google Gemini 1.5 Flash (SOP-grounded).
 
-## 🛠 Tech Stack
+## 🚀 Deployment
 
-- **Frontend**: React, Tailwind CSS, Three.js (@react-three/fiber), Leaflet.js, Framer Motion.
-- **Backend**: FastAPI, SQLAlchemy, SQLite, WebSockets.
-- **AI**: Google Gemini API.
+### Backend (Render)
+1. Create a new **Web Service** on Render.
+2. Connect this GitHub repository.
+3. Set **Root Directory** to `backend`.
+4. Set **Start Command** to `gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:$PORT`.
+5. Add Environment Variables:
+   - `GOOGLE_API_KEY`: Your Gemini API Key.
+   - `DATABASE_URL`: `sqlite:///./crisis_system.db` (or a persistent Postgres URL).
+
+### Frontend (Vercel)
+1. Create a new project on Vercel.
+2. Connect this GitHub repository.
+3. Set **Root Directory** to `frontend`.
+4. Add Environment Variables:
+   - `VITE_API_URL`: Your Render Web Service URL (e.g., `https://crisis-hub-api.onrender.com`).
+   - `VITE_WS_URL`: Your Render WebSocket URL (e.g., `wss://crisis-hub-api.onrender.com/ws`).
+5. Deploy!
