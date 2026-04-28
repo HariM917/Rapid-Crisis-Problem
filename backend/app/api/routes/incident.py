@@ -27,11 +27,14 @@ def read_incidents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 @router.post("/create", response_model=IncidentResponse)
 async def create_new_incident(incident: IncidentCreate, db: Session = Depends(get_db)):
     # Auto-classify and get intelligent suggestions
+    # Use AI to classify and get SOP steps
     ai_result = {"type": incident.type or "security", "priority": "high", "steps": ""}
     if incident.description:
         ai_result = await ai_service.classify_incident(incident.description)
     
-    incident.type = ai_result.get("type", incident.type)
+    # Only override if user didn't specify a specific type (security is the default)
+    if not incident.type or incident.type == "security":
+        incident.type = ai_result.get("type", incident.type)
     
     # Create the incident with AI data
     db_incident = incident_service.create_incident(db, incident)

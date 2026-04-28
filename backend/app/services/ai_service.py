@@ -26,13 +26,21 @@ async def classify_incident(description: str):
     if not model:
         # Grounded Fallback logic
         text_lower = description.lower()
-        if "fire" in text_lower or "smoke" in text_lower:
+        if any(w in text_lower for w in ["fire", "smoke", "burn", "explosion"]):
             return {
                 "type": "fire", 
                 "priority": "critical", 
                 "steps": "🚨 EVACUATE VIA STAIRS ONLY. Close doors. Assemble at Point A.",
                 "guest_steps": "🚨 FIRE ALERT: Evacuate immediately via STAIRS. Do NOT use elevators.",
                 "staff_steps": "🔥 FIRE PROTOCOL: Guide guests to Exit B. Check assigned rooms. Close doors."
+            }
+        if any(w in text_lower for w in ["medical", "injury", "faint", "heart", "blood"]):
+            return {
+                "type": "medical", 
+                "priority": "high", 
+                "steps": "🚑 MEDICAL EMERGENCY. Call 151. Stay with victim.",
+                "guest_steps": "🚑 MEDICAL ALERT: A responder is on the way. Please do not move the person.",
+                "staff_steps": "🚑 MEDICAL PROTOCOL: Bring AED. Clear path for EMS. Call 151."
             }
         return {
             "type": "security", 
@@ -43,33 +51,32 @@ async def classify_incident(description: str):
         }
 
     prompt = f"""
-    You are an elite emergency response AI for a luxury hotel, trained on these SOPs:
-    {sop_context}
+    You are an ELITE Emergency Classification AI for a luxury hotel.
+    SOP KNOWLEDGE: {sop_context}
 
-    Analyze the incident description and return a JSON object ONLY.
+    Analyze the incident and return ONLY a JSON object.
 
-    Description: "{description}"
+    STRICT CLASSIFICATION RULES:
+    1. If fire, smoke, or explosion is mentioned -> type: "fire", priority: "critical"
+    2. If injury, collapse, or medical distress -> type: "medical", priority: "high"
+    3. If threat, intrusion, or suspicious activity -> type: "security", priority: "medium"
 
-    Return JSON Format:
+    INCIDENT: "{description}"
+
+    RESPONSE JSON FORMAT:
     {{
       "type": "fire | medical | security",
       "priority": "low | medium | high | critical",
-      "steps": "Concise strategic action for the commander",
-      "guest_steps": "Direct, calm instructions for the guest",
-      "staff_steps": "Specific tactical tasks for responders"
+      "steps": "Strategic command order (1 sentence)",
+      "guest_steps": "Calm evacuation/safety instructions",
+      "staff_steps": "Tactical response checklist"
     }}
-
-    Rules:
-    - If Fire: Instructions MUST emphasize using stairs and avoiding elevators.
-    - If Medical: Instructions MUST emphasize staying with the victim and calling 151.
-    - Output ONLY valid JSON. No markdown formatting.
     """
 
     try:
         response = model.generate_content(prompt)
         text = response.text.strip()
         
-        # Clean Gemini's potentially verbose output
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
@@ -78,7 +85,10 @@ async def classify_incident(description: str):
         return json.loads(text)
     except Exception as e:
         print(f"Gemini AI Error: {e}")
-        # Structured fallback
+        # Structured safety fallback
+        text_lower = description.lower()
+        if "fire" in text_lower or "smoke" in text_lower:
+            return {"type": "fire", "priority": "critical", "steps": "EMERGENCY: Evacuate via stairs.", "guest_steps": "Evacuate via stairs.", "staff_steps": "Guide evacuation."}
         return {
             "type": "security",
             "priority": "medium",
