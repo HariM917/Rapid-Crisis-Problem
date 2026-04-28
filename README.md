@@ -49,11 +49,10 @@ A real-time emergency coordination platform for hotels, featuring AI classificat
 - **Voice SOS**: Trigger incidents using voice commands (processed via Web Speech API & OpenAI).
 - **Live Dashboard**: Real-time incident feed using WebSockets.
 - **Interactive Map**: Visualize incident locations and staff placement.
-- **AI Classification**: Automated emergency categorization (Fire, Medical, Security).
-- **Analytics**: Trend visualization using Chart.js.
+- **AI Engine**: Google Gemini 1.5 Flash (SOP-grounded).
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React, Tailwind CSS, Leaflet.js, Chart.js, Framer Motion.
+- **Frontend**: React, Tailwind CSS, Three.js (@react-three/fiber), Leaflet.js, Framer Motion.
 - **Backend**: FastAPI, SQLAlchemy, SQLite, WebSockets.
-- **AI**: OpenAI GPT-3.5 API.
+- **AI**: Google Gemini API.
