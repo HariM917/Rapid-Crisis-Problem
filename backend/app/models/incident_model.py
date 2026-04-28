@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
 from sqlalchemy.sql import func
 from app.db.database import Base
 
@@ -10,10 +10,10 @@ class Incident(Base):
     description = Column(String)
     status = Column(String, default="active") # active, resolved
     priority = Column(String, default="high")
-    response_steps = Column(String, nullable=True) # JSON string of suggested actions
+    response_steps = Column(JSON, nullable=True) # JSON object/list
     guest_steps = Column(String, nullable=True)
     staff_steps = Column(String, nullable=True)
-    timeline = Column(String, nullable=True) # JSON string of events
+    timeline = Column(JSON, nullable=True) # List of events
     room_name = Column(String, nullable=True) # e.g. "Room 302"
     phone_number = Column(String, nullable=True)
     lat = Column(Float)

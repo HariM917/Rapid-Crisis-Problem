@@ -26,29 +26,34 @@ def read_incidents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 
 @router.post("/create", response_model=IncidentResponse)
 async def create_new_incident(incident: IncidentCreate, db: Session = Depends(get_db)):
-    # Auto-classify and get intelligent suggestions
-    # Use AI to classify and get SOP steps
-    ai_result = {"type": incident.type or "security", "priority": "high", "steps": ""}
-    if incident.description:
-        ai_result = await ai_service.classify_incident(incident.description)
+    # 1. Start with AI detection
+    ai_result = await ai_service.classify_incident(incident.description) if incident.description else {"type": "security", "priority": "medium", "steps": ""}
     
-    # Only override if user didn't specify a specific type (security is the default)
-    if not incident.type or incident.type == "security":
-        incident.type = ai_result.get("type", incident.type)
+    # 2. Safety Rule Override (Guarantees fire detection regardless of AI)
+    desc_lower = incident.description.lower()
+    if any(w in desc_lower for w in ["fire", "smoke", "burning", "explosion"]):
+        ai_result["type"] = "fire"
+        ai_result["priority"] = "critical"
     
-    # Create the incident with AI data
+    # 3. Respect User Input (User specified type takes precedence unless it's a default)
+    if incident.type and incident.type != "security":
+        ai_result["type"] = incident.type
+
+    # Create the incident
     db_incident = incident_service.create_incident(db, incident)
-    db_incident.priority = ai_result.get("priority", "high")
+    
+    # Apply Intelligent Data
+    db_incident.type = ai_result.get("type", "security")
+    db_incident.priority = ai_result.get("priority", "medium")
     db_incident.response_steps = ai_result.get("steps", "")
     db_incident.guest_steps = ai_result.get("guest_steps", "")
     db_incident.staff_steps = ai_result.get("staff_steps", "")
     
-    from datetime import datetime
     now_str = datetime.now().strftime("%H:%M")
-    db_incident.timeline = json.dumps([
+    db_incident.timeline = [
         {"time": now_str, "event": "Incident Detected", "status": "critical"},
         {"time": now_str, "event": "AI Classification Complete", "status": "info"}
-    ])
+    ]
     
     # Resolve Room Name from Phone Number or Map Data
     if db_incident.phone_number and db_incident.phone_number.strip():

@@ -31,10 +31,10 @@ class IncidentResponse(IncidentBase):
     id: int
     status: str
     priority: str
-    response_steps: Optional[str] = None
+    response_steps: Optional[Any] = None
     guest_steps: Optional[str] = None
     staff_steps: Optional[str] = None
-    timeline: Optional[str] = None
+    timeline: Optional[List[Any]] = None
     room_name: Optional[str] = None
     phone_number: Optional[str] = None
     created_at: datetime
