@@ -11,7 +11,9 @@ def create_incident(db: Session, incident: IncidentCreate):
         description=incident.description,
         lat=incident.lat,
         lng=incident.lng,
-        phone_number=incident.phone_number
+        phone_number=incident.phone_number,
+        room_name=incident.room_name,
+        reporter_id=incident.reporter_id
     )
     db.add(db_incident)
     db.commit()

@@ -4,11 +4,13 @@ from typing import Optional
 import re
 
 class IncidentBase(BaseModel):
-    type: str
+    type: Optional[str] = None
     description: str
-    lat: float
-    lng: float
+    lat: Optional[float] = 0.0
+    lng: Optional[float] = 0.0
     phone_number: Optional[str] = None
+    room_name: Optional[str] = None
+    reporter_id: Optional[int] = None
 
     @validator('phone_number')
     def validate_phone(cls, v):

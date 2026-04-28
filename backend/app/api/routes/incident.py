@@ -95,30 +95,6 @@ async def create_new_incident(incident: IncidentCreate, db: Session = Depends(ge
         }
     })
 
-        
-    db.commit()
-    db.refresh(db_incident)
-    
-    # Broadcast via WebSocket
-    await manager.broadcast({
-        "event": "incident_created",
-        "data": {
-            "id": db_incident.id,
-            "type": db_incident.type,
-            "description": db_incident.description,
-            "lat": db_incident.lat,
-            "lng": db_incident.lng,
-            "status": db_incident.status,
-            "priority": db_incident.priority,
-            "response_steps": db_incident.response_steps,
-            "room_name": db_incident.room_name,
-            "assigned_staff_id": db_incident.assigned_staff_id,
-            "assigned_staff_name": best_staff.username if best_staff else None,
-            "assigned_staff_role": (best_staff.skills if best_staff else None) or "General Staff"
-        }
-    })
-
-    
     return db_incident
 
 @router.patch("/{id}", response_model=IncidentResponse)
