@@ -55,7 +55,11 @@ async def create_new_incident(incident: IncidentCreate, db: Session = Depends(ge
             if guest.guest_name:
                 db_incident.description = f"[Guest: {guest.guest_name}] " + db_incident.description
     
-    if not db_incident.room_name:
+    if (db_incident.lat == 0.0 and db_incident.lng == 0.0) and db_incident.room_name:
+        coords = map_service.get_coords_from_room(db_incident.room_name)
+        db_incident.lat = coords["lat"]
+        db_incident.lng = coords["lng"]
+    elif not db_incident.room_name:
         db_incident.room_name = map_service.get_room_from_coords(db_incident.lat, db_incident.lng)
     
     # Smart Dispatch: Find and assign nearest skilled staff

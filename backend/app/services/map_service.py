@@ -42,3 +42,31 @@ def get_room_from_coords(lat, lng):
     except Exception as e:
         print(f"Map resolution error: {e}")
         return "Building Sector A"
+
+def get_coords_from_room(room_name):
+    file_path = os.path.join(os.getcwd(), "map_data.json")
+    if not os.path.exists(file_path):
+        return {"lat": 13.111, "lng": 80.135} # Default center
+
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+            
+        CENTER_LAT = 13.111
+        CENTER_LNG = 80.135
+        GRID_X_OFFSET = 807600
+        GRID_Y_OFFSET = 820900
+        SCALE = 0.00001
+
+        for room in data.get("rooms", []):
+            if room_name.lower() in room.get("name", "").lower():
+                if room.get("boundaries") and len(room["boundaries"]) > 0:
+                    first_pt = room["boundaries"][0][0]
+                    r_lat = CENTER_LAT + (first_pt["y"] - GRID_Y_OFFSET) * SCALE
+                    r_lng = CENTER_LNG + (first_pt["x"] - GRID_X_OFFSET) * SCALE
+                    return {"lat": r_lat, "lng": r_lng}
+        
+        return {"lat": 13.111, "lng": 80.135}
+    except Exception as e:
+        print(f"Coordinate resolution error: {e}")
+        return {"lat": 13.111, "lng": 80.135}
