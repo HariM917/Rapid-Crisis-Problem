@@ -216,8 +216,9 @@ const Dashboard = () => {
 
   const toggleSimulation = async () => {
     try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const endpoint = simRunning ? '/simulation/stop' : '/simulation/start';
-      await axios.get(`http://localhost:8000${endpoint}`);
+      await axios.get(`${baseUrl}${endpoint}`);
       setSimRunning(!simRunning);
     } catch (error) {
       console.error("Sim failed", error);
@@ -226,7 +227,8 @@ const Dashboard = () => {
 
   const purgeIncidents = async () => {
     try {
-      await axios.delete('http://localhost:8000/incident/purge');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      await axios.delete(`${baseUrl}/incident/purge`);
       fetchIncidents();
       setNotification({ message: "System purged. All dummies cleared.", type: "success" });
     } catch (error) {
@@ -236,8 +238,9 @@ const Dashboard = () => {
 
   const simulateManual = async (type) => {
     try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const randomRoom = Math.floor(Math.random() * 12) + 101;
-      await axios.post('http://localhost:8000/incident/create', {
+      await axios.post(`${baseUrl}/incident/create`, {
         type,
         description: `MANUAL SIMULATION: ${type.toUpperCase()} triggered by supervisor.`,
         lat: 13.111,
@@ -525,12 +528,22 @@ const Dashboard = () => {
                                     <Shield size={12} />
                                     {userRole === 'admin' ? 'Strategic Protocol' : 'YOUR ASSIGNED TASKS'}
                                 </p>
-                                <p className="text-[11px] text-slate-900 font-bold leading-relaxed whitespace-pre-line">
-                                  {userRole === 'admin' ? 
-                                    (incident.response_steps || "Standard security protocol initiated.") : 
-                                    (incident.staff_steps || incident.response_steps || "Proceed to location and await orders.")
-                                  }
-                                </p>
+                                <div className="text-[11px] text-slate-900 font-bold leading-relaxed">
+                                  {(() => {
+                                    const rawSteps = userRole === 'admin' ? 
+                                      (incident.response_steps || "Standard security protocol initiated.") : 
+                                      (incident.staff_steps || incident.response_steps || "Proceed to location and await orders.");
+                                    
+                                    if (Array.isArray(rawSteps)) {
+                                      return (
+                                        <ul className="space-y-1.5 list-disc pl-4 mt-1">
+                                          {rawSteps.map((s, i) => <li key={i}>{s}</li>)}
+                                        </ul>
+                                      );
+                                    }
+                                    return <p className="whitespace-pre-line">{rawSteps}</p>;
+                                  })()}
+                                </div>
                             </div>
 
                             {/* Timeline Component */}
@@ -677,9 +690,15 @@ const IncidentItem = ({ incident, onResolve }) => {
             <CheckCircle size={10} className="text-blue-500" />
             AI Suggested Steps
           </p>
-          <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
-            {incident.response_steps}
-          </p>
+          <div className="text-[10px] text-slate-600 leading-relaxed font-medium">
+            {Array.isArray(incident.response_steps) ? (
+              <ul className="space-y-1 list-disc pl-4">
+                {incident.response_steps.map((s, i) => <li key={i}>{s}</li>)}
+              </ul>
+            ) : (
+              <p>{incident.response_steps}</p>
+            )}
+          </div>
         </div>
       )}
 
