@@ -51,25 +51,24 @@ async def classify_incident(description: str):
         }
 
     prompt = f"""
-    You are an ELITE Emergency Classification AI for a luxury hotel.
-    SOP KNOWLEDGE: {sop_context}
+    You are an emergency classification system.
 
-    Analyze the incident and return ONLY a JSON object.
+    STRICT RULES:
+    - Fire, smoke, burning → type = "fire", priority = "critical"
+    - Injury → "medical"
+    - Threat → "security"
 
-    STRICT CLASSIFICATION RULES:
-    1. If fire, smoke, or explosion is mentioned -> type: "fire", priority: "critical"
-    2. If injury, collapse, or medical distress -> type: "medical", priority: "high"
-    3. If threat, intrusion, or suspicious activity -> type: "security", priority: "medium"
+    DO NOT misclassify fire as security.
 
-    INCIDENT: "{description}"
+    Incident:
+    {description}
 
-    RESPONSE JSON FORMAT:
+    Return ONLY JSON:
     {{
-      "type": "fire | medical | security",
-      "priority": "low | medium | high | critical",
-      "steps": "Strategic command order (1 sentence)",
-      "guest_steps": "Calm evacuation/safety instructions",
-      "staff_steps": "Tactical response checklist"
+      "type": "...",
+      "priority": "...",
+      "guest_instructions": [],
+      "staff_instructions": []
     }}
     """
 
@@ -87,12 +86,16 @@ async def classify_incident(description: str):
         print(f"Gemini AI Error: {e}")
         # Structured safety fallback
         text_lower = description.lower()
-        if "fire" in text_lower or "smoke" in text_lower:
-            return {"type": "fire", "priority": "critical", "steps": "EMERGENCY: Evacuate via stairs.", "guest_steps": "Evacuate via stairs.", "staff_steps": "Guide evacuation."}
+        if any(w in text_lower for w in ["fire", "smoke", "burning"]):
+            return {
+                "type": "fire", 
+                "priority": "critical", 
+                "guest_instructions": ["Evacuate via stairs immediately."], 
+                "staff_instructions": ["Activate alarm", "Guide guests to exit"]
+            }
         return {
             "type": "security",
             "priority": "medium",
-            "steps": "Investigate reported incident and secure area.",
-            "guest_steps": "Please stay calm and await staff instructions.",
-            "staff_steps": "Proceed to location, assess situation, and report back."
+            "guest_instructions": ["Please stay calm and await instructions."],
+            "staff_instructions": ["Proceed to location", "Assess and report back"]
         }

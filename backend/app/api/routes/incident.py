@@ -48,9 +48,9 @@ async def create_new_incident(incident: IncidentCreate, db: Session = Depends(ge
     db_incident = incident_service.create_incident(db, incident)
     db_incident.type = final_type
     db_incident.priority = final_priority
-    db_incident.response_steps = ai_result.get("steps", "")
-    db_incident.guest_steps = ai_result.get("guest_steps", "")
-    db_incident.staff_steps = ai_result.get("staff_steps", "")
+    db_incident.response_steps = ai_result.get("steps") or ai_result.get("staff_instructions")
+    db_incident.guest_steps = ai_result.get("guest_instructions", [])
+    db_incident.staff_steps = ai_result.get("staff_instructions", [])
     
     now_str = datetime.now().strftime("%H:%M")
     db_incident.timeline = [

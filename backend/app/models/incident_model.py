@@ -11,8 +11,8 @@ class Incident(Base):
     status = Column(String, default="active") # active, resolved
     priority = Column(String, default="high")
     response_steps = Column(JSON, nullable=True) # JSON object/list
-    guest_steps = Column(String, nullable=True)
-    staff_steps = Column(String, nullable=True)
+    guest_steps = Column(JSON, nullable=True)
+    staff_steps = Column(JSON, nullable=True)
     timeline = Column(JSON, nullable=True) # List of events
     room_name = Column(String, nullable=True) # e.g. "Room 302"
     phone_number = Column(String, nullable=True)

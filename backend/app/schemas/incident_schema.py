@@ -32,8 +32,8 @@ class IncidentResponse(IncidentBase):
     status: str
     priority: str
     response_steps: Optional[Any] = None
-    guest_steps: Optional[str] = None
-    staff_steps: Optional[str] = None
+    guest_steps: Optional[Any] = None
+    staff_steps: Optional[Any] = None
     timeline: Optional[List[Any]] = None
     room_name: Optional[str] = None
     phone_number: Optional[str] = None
