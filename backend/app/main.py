@@ -15,6 +15,7 @@ app = FastAPI(title="AI Crisis Coordination System")
 
 @app.on_event("startup")
 def configure_db():
+    from sqlalchemy.exc import IntegrityError
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
@@ -26,26 +27,29 @@ def configure_db():
         ]
         
         for s in staff_data:
-            existing = db.query(User).filter(User.username == s["username"]).first()
-            if existing:
-                # Update existing roles if they are generic 'staff'
-                if existing.role == "staff":
-                    existing.role = s["role"]
-                    existing.skills = s["skills"]
-            else:
-                new_staff = User(
-                    username=s["username"],
-                    hashed_password="password", # In production, use hashing
-                    role=s["role"],
-                    skills=s["skills"],
-                    location_lat=s["lat"],
-                    location_lng=s["lng"],
-                    is_available=1, # Integer field
-                    location_floor=1
-                )
-                db.add(new_staff)
-        
-        db.commit()
+            try:
+                # Use a nested transaction/savepoint if possible, or just catch IntegrityError
+                existing = db.query(User).filter(User.username == s["username"]).first()
+                if not existing:
+                    new_staff = User(
+                        username=s["username"],
+                        hashed_password="password",
+                        role=s["role"],
+                        skills=s["skills"],
+                        location_lat=s["lat"],
+                        location_lng=s["lng"],
+                        is_available=1,
+                        location_floor=1
+                    )
+                    db.add(new_staff)
+                    db.commit()
+            except IntegrityError:
+                db.rollback()
+                # This happens if another worker seeded the user between our check and commit
+                continue 
+            except Exception as e:
+                db.rollback()
+                print(f"Unexpected seeding error for {s['username']}: {e}")
     finally:
         db.close()
 
