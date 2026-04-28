@@ -15,8 +15,18 @@ app = FastAPI(title="AI Crisis Coordination System")
 
 @app.on_event("startup")
 def configure_db():
-    from sqlalchemy.exc import IntegrityError
-    Base.metadata.create_all(bind=engine)
+    import time
+    import random
+    from sqlalchemy.exc import IntegrityError, OperationalError
+    
+    # Small jitter to prevent all workers from hitting the DB at the exact same microsecond
+    time.sleep(random.uniform(0, 1))
+    
+    try:
+        Base.metadata.create_all(bind=engine)
+    except OperationalError as e:
+        print(f"Database creation check skipped (likely another worker locked it): {e}")
+        
     db = SessionLocal()
     try:
         # Seed original staff if they don't exist
