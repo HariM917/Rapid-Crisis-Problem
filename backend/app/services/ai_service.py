@@ -7,46 +7,53 @@ load_dotenv()
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 async def classify_incident(text: str):
+    # Official SOP Context extracted from hotel documents
+    sop_context = """
+    HOTEL EMERGENCY PROTOCOLS (SOP):
+    - FIRE: Activate alarm, evacuate via STAIRS only (No Lifts). Close doors behind you. Guide guests to Assembly Point A. Housekeeping to check rooms 201-205.
+    - MEDICAL: Call 151 (Front Desk). Request EMS for serious injury. Stay with victim. Do NOT move them unless in immediate danger. Paramedics use Lift B for access.
+    - SECURITY: Contact Security via Radio Ch 4. Secure perimeter. Approach with caution. Redirect guest traffic away from hazard.
+    - EVACUATION: Priority for elderly, mobility-impaired, and families. Staff must lead guests to designated assembly areas and account for everyone.
+    
+    ROLE-SPECIFIC TASKS:
+    - FIREFIGHTER: Contain fire if small, guide evacuation, verify room clearance.
+    - PARAMEDIC: Provide first aid, coordinate with EMS, use medical lifts.
+    - SECURITY: Perimeter control, guest safety, radio coordination.
+    - HOUSEKEEPING: Room-by-room clearance, assisting mobility-impaired guests.
+    """
+
     if not os.getenv("OPENAI_API_KEY"):
-        # Grounded Fallback logic based on Housekeeping SOP & Emergency Response Plan
+        # Grounded Fallback logic
         text_lower = text.lower()
         if "fire" in text_lower or "smoke" in text_lower:
             return {
                 "type": "fire", 
                 "priority": "critical", 
-                "steps": "EMERGENCY: USE STAIRCASE ONLY. Do not use elevators. Assist mobility-impaired guests. Assembly at designated point.",
-                "guest_steps": "🚨 FIRE ALERT: Evacuate immediately via STAIRS. Do NOT use elevators. Floor wardens will assist you.",
-                "staff_steps": "🔥 FIRE PROTOCOL: Guide guests to Exit B. Check rooms 201-205. Avoid elevators. Report to assembly point."
+                "steps": "🚨 EVACUATE VIA STAIRS ONLY. Close doors. Assemble at Point A.",
+                "guest_steps": "🚨 FIRE ALERT: Evacuate immediately via STAIRS. Do NOT use elevators. Follow floor wardens.",
+                "staff_steps": "🔥 FIRE PROTOCOL: Guide guests to Exit B. Check assigned rooms. Close doors. Report to assembly point."
             }
         if "doctor" in text_lower or "medical" in text_lower or "hurt" in text_lower:
             return {
                 "type": "medical", 
                 "priority": "high", 
-                "steps": "EMERGENCY: USE LIFT FOR SPEED. Get to the ground floor or meet paramedics at the elevator lobby. Do not move victim unless unsafe.",
-                "guest_steps": "🚑 MEDICAL EMERGENCY: Stay calm. If possible, move to the elevator lobby for faster paramedic access. Do not move the injured person.",
-                "staff_steps": "🏥 MEDICAL PROTOCOL: Bring First Aid kit to location. Clear elevator for paramedic use. Stay with victim until help arrives."
+                "steps": "🚑 STAY WITH VICTIM. Call 151. Use Lift B for Paramedics. Do not move injured person.",
+                "guest_steps": "🚑 MEDICAL EMERGENCY: Paramedics are on the way. Stay calm. Do not move if injured.",
+                "staff_steps": "🏥 MEDICAL PROTOCOL: Bring First Aid kit. Clear Lift B. Stay with victim until help arrives."
             }
         return {
             "type": "security", 
             "priority": "medium", 
-            "steps": "1. Inform supervisor/security via radio. 2. Approach with caution. 3. Secure the area and guide guests away from hazard. 4. Document incident timeline.",
+            "steps": "🛡️ SECURE AREA. Radio Ch 4. Approach with caution. Guide guests away.",
             "guest_steps": "⚠️ SECURITY ALERT: Please remain in your room until further notice. Avoid the affected area.",
-            "staff_steps": "🛡️ SECURITY PROTOCOL: Secure perimeter. Redirect guest traffic. Monitor CCTV. Radio supervisor for backup."
+            "staff_steps": "🛡️ SECURITY PROTOCOL: Secure perimeter. Redirect traffic. Monitor CCTV. Radio for backup."
         }
 
     try:
-        # For OpenAI, we inject the SOP context into the system prompt
-        sop_context = """
-        Official Protocol Context:
-        - FIRE: Pull alarm, evacuate via stairs only, assist mobility-impaired, close doors, assemble and account.
-        - MEDICAL: Assess ABCs, call emergency 151/Front Desk, stay with victim, no moving unless unsafe.
-        - SECURITY: Secure area, guide guests away, document timeline, approach with caution.
-        - EVACUATION: Calm tone, priority for elderly/families, use assembly monitors.
-        """
         response = await client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": f"You are an expert emergency dispatcher trained on these SOPs: {sop_context}. Analyze the description and return a JSON object with: 'type' (fire, medical, security), 'priority' (low, medium, high, critical), 'steps' (concise string of general actions), 'guest_steps' (specific instructions for guests), and 'staff_steps' (specific tasks for staff)."},
+                {"role": "system", "content": f"You are an elite emergency dispatcher trained on these hotel SOPs: {sop_context}. Analyze the description and return a JSON object with: 'type' (fire, medical, security), 'priority' (low, medium, high, critical), 'steps' (concise strategic actions), 'guest_steps' (clear instructions for guests), and 'staff_steps' (specific tasks for staff members based on their roles)."},
                 {"role": "user", "content": text}
             ],
             response_format={ "type": "json_object" }

@@ -33,13 +33,52 @@ class DispatchSimulator:
                 for inc in active_incidents:
                     staff = db.query(User).filter(User.id == inc.assigned_staff_id).first()
                     if staff:
-                        # Move staff towards incident
+                        # Determine target floor from room_name (e.g. "Room 302" -> Floor 3)
+                        target_floor = 1
+                        try:
+                            room_digits = ''.join(filter(str.isdigit, str(inc.room_name)))
+                            if len(room_digits) >= 3:
+                                target_floor = int(room_digits[0])
+                            elif inc.room_name and "floor" in inc.room_name.lower():
+                                target_floor = int(''.join(filter(str.isdigit, inc.room_name)))
+                        except:
+                            pass
+
+                        # 1. Vertical Movement (Floor Change)
+                        if staff.location_floor != target_floor:
+                            # Simulate taking the lift/stairs (slower than horizontal movement)
+                            if random.random() > 0.7: # Probability of moving one floor per tick
+                                staff.location_floor += 1 if target_floor > staff.location_floor else -1
+                                await manager.broadcast({
+                                    "event": "staff_movement",
+                                    "data": {
+                                        "id": staff.id,
+                                        "username": staff.username,
+                                        "floor": staff.location_floor,
+                                        "incident_id": inc.id,
+                                        "status": "Changing Floors"
+                                    }
+                                })
+                            continue # Vertical movement takes the whole tick
+
+                        # 2. Horizontal Movement
                         d_lat = inc.lat - staff.location_lat
                         d_lng = inc.lng - staff.location_lng
                         
                         dist = (d_lat**2 + d_lng**2)**0.5
+                        
+                        # Obstacle Avoidance: Check temperature in nearby rooms
+                        from app.services.iot_service import iot_simulator
+                        danger_detected = False
+                        if "firefighter" not in (staff.role or "").lower():
+                            # Mock check: if any room on this floor is > 60C, slow down or reroute
+                            for rid, temp in iot_simulator.room_temperatures.items():
+                                if temp > 60 and str(staff.location_floor) in rid:
+                                    danger_detected = True
+                                    break
+                        
                         if dist > 0.00005: # Not yet arrived
-                            step = 0.0001 # Speed of movement
+                            step = 0.0001 if not danger_detected else 0.00003 # Slow down in danger
                             staff.location_lat += (d_lat / dist) * step
                             staff.location_lng += (d_lng / dist) * step
                             
@@ -53,7 +92,9 @@ class DispatchSimulator:
                                     "username": staff.username,
                                     "lat": staff.location_lat,
                                     "lng": staff.location_lng,
-                                    "incident_id": inc.id
+                                    "floor": staff.location_floor,
+                                    "incident_id": inc.id,
+                                    "caution": danger_detected
                                 }
                             })
                         elif dist > 0:

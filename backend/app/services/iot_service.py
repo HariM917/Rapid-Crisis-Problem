@@ -62,21 +62,45 @@ class IoTSimulator:
                     # Natural fluctuation
                     change = random.uniform(-0.5, 0.8)
                     
-                    # Fire Spread Logic
+                    # Hardened Fire Spread Logic
                     if fire_rooms:
                         for fr in fire_rooms:
-                            # If room is the fire room or adjacent (simple numeric proximity for demo)
                             try:
-                                rid_int = int(''.join(filter(str.isdigit, rid)))
-                                fr_int = int(''.join(filter(str.isdigit, fr)))
+                                # Parse floor and room numbers
+                                # Standard format: room-FXX (e.g. room-101) or just FXX (e.g. 101)
+                                rid_clean = ''.join(filter(str.isdigit, rid))
+                                fr_clean = ''.join(filter(str.isdigit, fr))
+                                
+                                if not rid_clean or not fr_clean: continue
+                                
+                                rid_int = int(rid_clean)
+                                fr_int = int(fr_clean)
+                                
+                                r_floor = rid_int // 100
+                                f_floor = fr_int // 100
+                                r_num = rid_int % 100
+                                f_num = fr_int % 100
+
+                                # 1. Direct Hit (Same Room)
                                 if rid_int == fr_int:
-                                    change += random.uniform(5, 10) # Heavy heat in fire room
-                                elif abs(rid_int - fr_int) <= 2:
-                                    change += random.uniform(2, 5) # Heat spreading to neighbors
-                            except:
+                                    change += random.uniform(8, 15) # Intense heat
+                                
+                                # 2. Horizontal Spread (Same Floor, adjacent rooms)
+                                elif r_floor == f_floor and abs(r_num - f_num) <= 2:
+                                    change += random.uniform(3, 6)
+                                
+                                # 3. Vertical Spread (Smoke/Heat rises)
+                                elif r_floor > f_floor and r_num == f_num:
+                                    # Heat rises to the room directly above
+                                    floor_diff = r_floor - f_floor
+                                    change += random.uniform(2, 4) / floor_diff
+                                    
+                            except Exception as e:
+                                print(f"Fire spread calc error for {rid} vs {fr}: {e}")
                                 pass
                     
-                    self.room_temperatures[rid] = max(18, min(150, self.room_temperatures[rid] + change))
+                    # Update temperature and broadcast if significant change
+                    self.room_temperatures[rid] = max(18, min(200, self.room_temperatures[rid] + change))
                 
                 # Broadcast sensor data
                 await manager.broadcast({

@@ -19,3 +19,4 @@ class User(Base):
     is_available = Column(Integer, default=1) # 1=available, 0=busy
     location_lat = Column(Float, nullable=True)
     location_lng = Column(Float, nullable=True)
+    location_floor = Column(Integer, default=1)

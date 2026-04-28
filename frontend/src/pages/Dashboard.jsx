@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { incidentService, guestService, userService } from '../services/api';
+import { incidentService, guestService, userService, mapService } from '../services/api';
+import { useRealtime } from '../hooks/useRealtime';
 import FloorPlan from '../components/FloorPlan';
 import AnalyticsPanel from '../components/AnalyticsPanel';
 import IoTSensorPanel from '../components/IoTSensorPanel';
@@ -105,13 +106,48 @@ const Dashboard = () => {
   const [notification, setNotification] = useState(null);
   const [realGuests, setRealGuests] = useState([]);
   const [iotData, setIotData] = useState({});
+  const [mapData, setMapData] = useState({ rooms: [] });
   const [simRunning, setSimRunning] = useState(false);
+
+  const lastEvent = useRealtime();
 
   useEffect(() => {
     fetchIncidents();
     fetchStaff();
     fetchGuests();
+    fetchMapData();
   }, []);
+
+  useEffect(() => {
+    if (lastEvent) {
+      handleRealtimeEvent(lastEvent);
+    }
+  }, [lastEvent]);
+
+  const fetchMapData = async () => {
+    try {
+      const response = await mapService.getData();
+      setMapData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch map data", error);
+    }
+  };
+
+  const handleRealtimeEvent = (event) => {
+    if (event.event === 'iot_update') {
+      setIotData(prev => ({ ...prev, ...event.data.room_temps }));
+    } else if (event.event === 'staff_movement') {
+      setStaff(prev => prev.map(s => 
+        s.id === event.data.id ? { ...s, location_lat: event.data.lat, location_lng: event.data.lng, location_floor: event.data.floor } : s
+      ));
+    } else if (event.event === 'incident_created') {
+      fetchIncidents();
+    } else if (event.event === 'incident_updated') {
+      setIncidents(prev => prev.map(inc => 
+        inc.id === event.data.id ? { ...inc, ...event.data } : inc
+      ));
+    }
+  };
 
   const fetchGuests = async () => {
     try {
@@ -415,7 +451,12 @@ const Dashboard = () => {
                         {viewMode === 'map' && <MapView incidents={activeIncidents} staff={staff} />}
                         {viewMode === '3d' && (
                           <div className="w-full h-full">
-                            <ThreeMapView mapData={{rooms: []}} incidents={activeIncidents} staff={staff} />
+                            <ThreeMapView 
+                              mapData={mapData} 
+                              incidents={activeIncidents} 
+                              staff={staff} 
+                              iotData={iotData}
+                            />
                           </div>
                         )}
                       </div>
@@ -459,12 +500,12 @@ const Dashboard = () => {
 
                             <h4 className="text-sm font-black text-slate-800 mb-4 leading-tight">{incident.description}</h4>
                             
-                            <div className="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100/50">
-                                <p className="text-[9px] font-black text-blue-600 uppercase mb-2 flex items-center gap-2">
+                            <div className={`bg-slate-50 rounded-2xl p-4 mb-4 border ${incident.type === 'fire' ? 'border-red-100' : 'border-blue-100'}`}>
+                                <p className={`text-[9px] font-black uppercase mb-2 flex items-center gap-2 ${incident.type === 'fire' ? 'text-red-600' : 'text-blue-600'}`}>
                                     <Shield size={12} />
-                                    {userRole === 'admin' ? 'Strategic Protocol' : 'Responder Tasks'}
+                                    {userRole === 'admin' ? 'Strategic Protocol' : 'YOUR ASSIGNED TASKS'}
                                 </p>
-                                <p className="text-[11px] text-slate-900 font-bold leading-relaxed">
+                                <p className="text-[11px] text-slate-900 font-bold leading-relaxed whitespace-pre-line">
                                   {userRole === 'admin' ? 
                                     (incident.response_steps || "Standard security protocol initiated.") : 
                                     (incident.staff_steps || incident.response_steps || "Proceed to location and await orders.")
