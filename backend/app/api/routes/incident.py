@@ -27,25 +27,27 @@ def read_incidents(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
 
 @router.post("/create", response_model=IncidentResponse)
 async def create_new_incident(incident: IncidentCreate, db: Session = Depends(get_db)):
-    # 1. Start with AI detection
+    # Step 1: Run AI detection
     ai_result = await ai_service.classify_incident(incident.description) if incident.description else {"type": "security", "priority": "medium", "steps": ""}
     
-    # 2. Safety Rule Override (Guarantees fire detection regardless of AI)
+    # Step 2: Start with AI result
+    final_type = ai_result.get("type", "security")
+    final_priority = ai_result.get("priority", "medium")
+    
+    # Step 3: OVERRIDE with user input if provided
+    if incident.type and incident.type != "security":
+        final_type = incident.type
+
+    # Step 4: SAFETY RULE (CRITICAL - Final Override)
     desc_lower = incident.description.lower()
     if any(w in desc_lower for w in ["fire", "smoke", "burning", "explosion"]):
-        ai_result["type"] = "fire"
-        ai_result["priority"] = "critical"
-    
-    # 3. Respect User Input (User specified type takes precedence unless it's a default)
-    if incident.type and incident.type != "security":
-        ai_result["type"] = incident.type
+        final_type = "fire"
+        final_priority = "critical"
 
-    # Create the incident
+    # Step 5: Assign final values to the database incident
     db_incident = incident_service.create_incident(db, incident)
-    
-    # Apply Intelligent Data
-    db_incident.type = ai_result.get("type", "security")
-    db_incident.priority = ai_result.get("priority", "medium")
+    db_incident.type = final_type
+    db_incident.priority = final_priority
     db_incident.response_steps = ai_result.get("steps", "")
     db_incident.guest_steps = ai_result.get("guest_steps", "")
     db_incident.staff_steps = ai_result.get("staff_steps", "")
