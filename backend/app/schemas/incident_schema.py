@@ -1,6 +1,6 @@
 from pydantic import BaseModel, validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Any
 import re
 
 class IncidentBase(BaseModel):
