@@ -70,3 +70,7 @@ A real-time emergency coordination platform for hotels, featuring AI classificat
    - `VITE_API_URL`: Your Render Web Service URL (e.g., `https://crisis-hub-api.onrender.com`).
    - `VITE_WS_URL`: Your Render WebSocket URL (e.g., `wss://crisis-hub-api.onrender.com/ws`).
 5. Deploy!
+
+##Contributors
+
+Hari.M
